@@ -603,6 +603,38 @@ static int32_t msm_flash_low(
 	return 0;
 }
 
+struct msm_flash_ctrl_t *flash_ctrl_wt = NULL;
+
+int32_t wt_flash_flashlight(bool boolean)
+{
+	uint32_t curr = 0;
+	int32_t i = 0;
+
+	if (boolean)
+		curr = 100;
+	else
+		curr = 0;
+
+	if (flash_ctrl_wt) {
+		CDBG("WT Enter\n");
+
+		/* Turn on flash triggers */
+		CDBG("WT_XJB  flash_ctrl_wt->torch_num_sources = %d",
+		     flash_ctrl_wt->torch_num_sources);
+		for (i = 0; i < flash_ctrl_wt->torch_num_sources - 1; i++) {
+			CDBG("WT low_flash_current[%d] = %d\n", i, curr);
+			if (flash_ctrl_wt->torch_trigger[i]) {
+				led_trigger_event(flash_ctrl_wt->
+						  torch_trigger[i], curr);
+			}
+		}
+		if (flash_ctrl_wt->switch_trigger)
+			led_trigger_event(flash_ctrl_wt->switch_trigger, 1);
+		CDBG("WT Exit\n");
+	}
+	return 0;
+}
+
 static int32_t msm_flash_high(
 	struct msm_flash_ctrl_t *flash_ctrl,
 	struct msm_flash_cfg_data_t *flash_data)
@@ -1162,6 +1194,8 @@ static int32_t msm_flash_platform_probe(struct platform_device *pdev)
 
 	if (flash_ctrl->flash_driver_type == FLASH_DRIVER_PMIC)
 		rc = msm_torch_create_classdev(pdev, flash_ctrl);
+
+	flash_ctrl_wt = flash_ctrl;
 
 	CDBG("probe success\n");
 	return rc;
