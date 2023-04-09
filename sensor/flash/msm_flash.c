@@ -612,7 +612,7 @@ static int32_t msm_flash_high(
 	int32_t i = 0;
 
 	/* Turn off torch triggers */
-	for (i = 0; i < flash_ctrl->torch_num_sources; i++)
+	for (i = 0; i < flash_ctrl->torch_num_sources - 1; i++)
 		if (flash_ctrl->torch_trigger[i])
 			led_trigger_event(flash_ctrl->torch_trigger[i], 0);
 
