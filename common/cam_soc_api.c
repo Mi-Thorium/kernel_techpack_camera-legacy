@@ -838,7 +838,7 @@ void __iomem *legacy_msm_camera_get_reg_base(struct platform_device *pdev,
 		char *device_name, int reserve_mem)
 {
 	struct resource *mem;
-	void *base;
+	void __iomem *base;
 
 	if (!pdev || !device_name) {
 		pr_err("Invalid params\n");
