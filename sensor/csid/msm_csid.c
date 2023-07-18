@@ -265,7 +265,7 @@ static int msm_csid_reset(struct csid_device *csid_dev)
 static bool msm_csid_find_max_clk_rate(struct csid_device *csid_dev)
 {
 	int i;
-	bool ret = FALSE;
+	bool ret = false;
 
 	for (i = 0; i < csid_dev->num_clk; i++) {
 		if (!strcmp(csid_dev->csid_clk_info[i].clk_name,
@@ -276,7 +276,7 @@ static bool msm_csid_find_max_clk_rate(struct csid_device *csid_dev)
 			csid_dev->csid_max_clk =
 				 csid_dev->csid_clk_info[i].clk_rate;
 			csid_dev->csid_clk_index = i;
-			ret = TRUE;
+			ret = true;
 			break;
 		}
 	}
@@ -512,7 +512,7 @@ static int msm_csid_irq_routine(struct v4l2_subdev *sd, u32 status,
 	irqreturn_t ret;
 	CDBG("%s E\n", __func__);
 	ret = msm_csid_irq(csid_dev->irq->start, csid_dev);
-	*handled = TRUE;
+	*handled = true;
 	return 0;
 }
 

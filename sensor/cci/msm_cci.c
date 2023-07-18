@@ -1824,7 +1824,7 @@ static int msm_cci_irq_routine(struct v4l2_subdev *sd, u32 status,
 	CDBG("%s line %d\n", __func__, __LINE__);
 	ret = msm_cci_irq(cci_dev->irq->start, cci_dev);
 	CDBG("%s: msm_cci_irq return %d\n", __func__, ret);
-	*handled = TRUE;
+	*handled = true;
 	return 0;
 }
 
