@@ -216,23 +216,11 @@ static int32_t msm_flash_i2c_init(
 
 #ifdef CONFIG_COMPAT
 	if (is_compat_task()) {
-		power_setting_array32 = kzalloc(
-			sizeof(struct msm_sensor_power_setting_array32),
-			GFP_KERNEL);
-		if (!power_setting_array32) {
-			pr_err("%s mem allocation failed %d\n",
-				__func__, __LINE__);
-			return -ENOMEM;
-		}
-
-		if (copy_from_user(power_setting_array32,
-			(void *)flash_init_info->power_setting_array,
-			sizeof(struct msm_sensor_power_setting_array32))) {
-			pr_err("%s copy_from_user failed %d\n",
-				__func__, __LINE__);
-			kfree(power_setting_array32);
-			return -EFAULT;
-		}
+		power_setting_array32 = memdup_user(
+			(void __user *)flash_init_info->power_setting_array,
+			sizeof(struct msm_sensor_power_setting_array32));
+		if (IS_ERR(power_setting_array32))
+			return PTR_ERR(power_setting_array32);
 
 		flash_ctrl->power_setting_array.size =
 			power_setting_array32->size;
@@ -314,21 +302,11 @@ static int32_t msm_flash_i2c_init(
 	}
 
 	if (flash_data->cfg.flash_init_info->settings) {
-		settings = kzalloc(sizeof(
-			struct msm_camera_i2c_reg_setting_array), GFP_KERNEL);
-		if (!settings) {
-			pr_err("%s mem allocation failed %d\n",
-				__func__, __LINE__);
-			return -ENOMEM;
-		}
-
-		if (copy_from_user(settings, (void *)flash_init_info->settings,
-			sizeof(struct msm_camera_i2c_reg_setting_array))) {
-			kfree(settings);
-			pr_err("%s copy_from_user failed %d\n",
-				__func__, __LINE__);
-			return -EFAULT;
-		}
+		settings = memdup_user((void __user *)
+				flash_init_info->settings, sizeof(
+				struct msm_camera_i2c_reg_setting_array));
+		if (IS_ERR(settings))
+			return PTR_ERR(settings);
 
 		rc = msm_flash_i2c_write_table(flash_ctrl, settings);
 		kfree(settings);
@@ -434,20 +412,11 @@ static int32_t msm_flash_i2c_write_setting_array(
 		return -EFAULT;
 	}
 
-	settings = kzalloc(sizeof(struct msm_camera_i2c_reg_setting_array),
-		GFP_KERNEL);
-	if (!settings) {
-		pr_err("%s mem allocation failed %d\n", __func__, __LINE__);
-		return -ENOMEM;
-	}
-
-	if (copy_from_user(settings, (void *)flash_data->cfg.settings,
-		sizeof(struct msm_camera_i2c_reg_setting_array))) {
-		kfree(settings);
-		pr_err("%s copy_from_user failed %d\n", __func__, __LINE__);
-		return -EFAULT;
-	}
-
+	settings = memdup_user((void __user *)
+			flash_data->cfg.settings, sizeof(
+				struct msm_camera_i2c_reg_setting_array));
+	if (IS_ERR(settings))
+		return PTR_ERR(settings);
 	rc = msm_flash_i2c_write_table(flash_ctrl, settings);
 	kfree(settings);
 
