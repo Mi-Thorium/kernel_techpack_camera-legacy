@@ -1692,7 +1692,7 @@ static inline void msm_ispif_read_irq_status(struct ispif_irq_status *out,
 		}
 	}
 
-	if (fatal_err == true) {
+	if (fatal_err) {
 		pr_err_ratelimited("%s: fatal error, stop ispif immediately\n",
 			__func__);
 		for (i = 0; i < ispif->vfe_info.num_vfe; i++) {
