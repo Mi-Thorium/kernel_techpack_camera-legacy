@@ -494,7 +494,7 @@ int legacy_msm_camera_get_dt_power_setting_data(struct device_node *of_node,
 
 	struct msm_sensor_power_setting *power_setting;
 	uint16_t *power_setting_size, size = 0;
-	bool need_reverse = 0;
+	bool need_reverse = false;
 
 	if (!power_info)
 		return -EINVAL;
@@ -660,7 +660,7 @@ int legacy_msm_camera_get_dt_power_setting_data(struct device_node *of_node,
 	size = *power_setting_size;
 
 	if (NULL != ps && 0 != size)
-		need_reverse = 1;
+		need_reverse = true;
 
 	power_info->power_down_setting =
 		kzalloc(sizeof(*ps) * size, GFP_KERNEL);
