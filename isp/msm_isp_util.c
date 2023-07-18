@@ -1471,19 +1471,10 @@ int legacy_msm_isp_proc_cmd(struct vfe_device *vfe_dev, void *arg)
 	}
 
 	if (proc_cmd->cmd_len > 0) {
-		cfg_data = kzalloc(proc_cmd->cmd_len, GFP_KERNEL);
-		if (!cfg_data) {
-			pr_err("%s: cfg_data alloc failed\n", __func__);
-			rc = -ENOMEM;
-			goto cfg_data_failed;
-		}
-
-		if (copy_from_user(cfg_data,
-			(void __user *)(proc_cmd->cfg_data),
-			proc_cmd->cmd_len)) {
-			rc = -EFAULT;
-			goto copy_cmd_failed;
-		}
+		cfg_data = memdup_user((void __user *)(proc_cmd->cfg_data),
+			proc_cmd->cmd_len);
+		if (IS_ERR(cfg_data))
+			return PTR_ERR(cfg_data);
 	}
 
 	for (i = 0; i < proc_cmd->num_cfg; i++)
