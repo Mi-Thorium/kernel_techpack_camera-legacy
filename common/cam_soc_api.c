@@ -461,8 +461,14 @@ static int msm_camera_put_clk_info_internal(struct device *dev,
 {
 	int i;
 
-	for (i = cnt - 1; i >= 0; i--)
+	for (i = cnt - 1; i >= 0; i--) {
+		if (clk_ptr[i] != NULL)
+			devm_clk_put(dev, (*clk_ptr)[i]);
+
 		CDBG("clk ptr[%d] :%pK\n", i, (*clk_ptr)[i]);
+	}
+	devm_kfree(dev, *clk_info);
+	devm_kfree(dev, *clk_ptr);
 	*clk_info = NULL;
 	*clk_ptr = NULL;
 	return 0;
@@ -506,8 +512,17 @@ int legacy_msm_camera_put_clk_info_and_rates(struct platform_device *pdev,
 {
 	int i;
 
-	for (i = cnt - 1; i >= 0; i--)
+	for (i = set - 1; i >= 0; i--)
+		devm_kfree(&pdev->dev, (*clk_rates)[i]);
+
+	devm_kfree(&pdev->dev, *clk_rates);
+	for (i = cnt - 1; i >= 0; i--) {
+		if (clk_ptr[i] != NULL)
+			devm_clk_put(&pdev->dev, (*clk_ptr)[i]);
 		CDBG("clk ptr[%d] :%pK\n", i, (*clk_ptr)[i]);
+	}
+	devm_kfree(&pdev->dev, *clk_info);
+	devm_kfree(&pdev->dev, *clk_ptr);
 	*clk_info = NULL;
 	*clk_ptr = NULL;
 	*clk_rates = NULL;
@@ -530,7 +545,10 @@ int legacy_msm_camera_get_reset_info(struct platform_device *pdev,
 
 	*micro_iface_reset = devm_reset_control_get
 				(&pdev->dev, "micro_iface_reset");
-	return PTR_ERR_OR_ZERO(*micro_iface_reset);
+	if (IS_ERR(*micro_iface_reset))
+		return PTR_ERR(*micro_iface_reset);
+
+	return 0;
 }
 EXPORT_SYMBOL(legacy_msm_camera_get_reset_info);
 
@@ -603,6 +621,9 @@ int legacy_msm_camera_get_regulator_info(struct platform_device *pdev,
 	return 0;
 
 err1:
+	for (--i; i >= 0; i--)
+		devm_regulator_put(tmp_reg[i].vdd);
+	devm_kfree(&pdev->dev, tmp_reg);
 	return rc;
 }
 EXPORT_SYMBOL(legacy_msm_camera_get_regulator_info);
@@ -709,9 +730,11 @@ void legacy_msm_camera_put_regulators(struct platform_device *pdev,
 
 	for (i = cnt - 1; i >= 0; i--) {
 		if (vdd_info[i] && !IS_ERR_OR_NULL(vdd_info[i]->vdd))
+			devm_regulator_put(vdd_info[i]->vdd);
 			CDBG("vdd ptr[%d] :%pK\n", i, vdd_info[i]->vdd);
 	}
 
+	devm_kfree(&pdev->dev, *vdd_info);
 	*vdd_info = NULL;
 }
 EXPORT_SYMBOL(legacy_msm_camera_put_regulators);
@@ -805,6 +828,7 @@ int legacy_msm_camera_unregister_irq(struct platform_device *pdev,
 	}
 
 	CDBG("Un Registering irq for [resource - %pK]\n", irq);
+	devm_free_irq(&pdev->dev, irq->start, dev_id);
 
 	return 0;
 }
@@ -895,6 +919,7 @@ int legacy_msm_camera_put_reg_base(struct platform_device *pdev,
 	}
 	CDBG("mem : %pK, size : %d\n", mem, (int)resource_size(mem));
 
+	devm_iounmap(&pdev->dev, base);
 	if (reserve_mem)
 		devm_release_mem_region(&pdev->dev,
 			mem->start, resource_size(mem));
@@ -988,7 +1013,7 @@ uint32_t legacy_msm_camera_update_bus_bw(int id, uint64_t ab, uint64_t ib)
 	}
 	if (legacy_g_cv[id].num_usecases != 2 ||
 		legacy_g_cv[id].num_paths != 1 ||
-		!legacy_g_cv[id].dyn_vote) {
+		legacy_g_cv[id].dyn_vote != true) {
 		pr_err("dynamic update not allowed\n");
 		return -EINVAL;
 	}
@@ -1016,7 +1041,7 @@ EXPORT_SYMBOL(legacy_msm_camera_update_bus_bw);
 uint32_t legacy_msm_camera_update_bus_vector(enum cam_bus_client id,
 	int vector_index)
 {
-	if (id >= CAM_BUS_CLIENT_MAX || legacy_g_cv[id].dyn_vote) {
+	if (id >= CAM_BUS_CLIENT_MAX || legacy_g_cv[id].dyn_vote == true) {
 		pr_err("Invalid params");
 		return -EINVAL;
 	}
@@ -1050,7 +1075,7 @@ uint32_t legacy_msm_camera_unregister_bus_client(enum cam_bus_client id)
 	legacy_g_cv[id].num_usecases = 0;
 	legacy_g_cv[id].num_paths = 0;
 	legacy_g_cv[id].vector_index = 0;
-	legacy_g_cv[id].dyn_vote = false;
+	legacy_g_cv[id].dyn_vote = 0;
 
 	return 0;
 }
