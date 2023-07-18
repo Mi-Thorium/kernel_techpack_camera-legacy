@@ -866,17 +866,9 @@ int legacy_msm_jpeg_ioctl_hw_cmds(struct msm_jpeg_device *pgmn_dev,
 
 	len = sizeof(struct msm_jpeg_hw_cmds) +
 		sizeof(struct msm_jpeg_hw_cmd) * (m - 1);
-	hw_cmds_p = kmalloc(len, GFP_KERNEL);
-	if (!hw_cmds_p) {
-		JPEG_PR_ERR("%s:%d] no mem %d\n", __func__, __LINE__, len);
-		return -EFAULT;
-	}
-
-	if (copy_from_user(hw_cmds_p, arg, len)) {
-		JPEG_PR_ERR("%s:%d] failed\n", __func__, __LINE__);
-		kfree(hw_cmds_p);
-		return -EFAULT;
-	}
+	hw_cmds_p = memdup_user((const void __user *)arg, len);
+		if (IS_ERR(hw_cmds_p))
+			return PTR_ERR(hw_cmds_p);
 
 	hw_cmd_p = (struct msm_jpeg_hw_cmd *) &(hw_cmds_p->hw_cmd);
 
@@ -1175,17 +1167,10 @@ int legacy_msm_jpeg_ioctl_hw_cmds32(struct msm_jpeg_device *pgmn_dev,
 
 	len32 = sizeof(struct msm_jpeg_hw_cmds32) +
 			sizeof(struct msm_jpeg_hw_cmd32) * (m - 1);
-	phw_cmds32 = kmalloc(len32, GFP_KERNEL);
-	if (!phw_cmds32) {
-		JPEG_PR_ERR("%s:%d] no mem %d\n", __func__, __LINE__, len32);
-		return -EFAULT;
-	}
+	phw_cmds32 = memdup_user(arg, len32);
+		if (IS_ERR(phw_cmds32))
+			return PTR_ERR(phw_cmds32);
 
-	if (copy_from_user(phw_cmds32, arg, len32)) {
-		JPEG_PR_ERR("%s:%d] failed\n", __func__, __LINE__);
-		kfree(phw_cmds32);
-		return -EFAULT;
-	}
 	len = sizeof(struct msm_jpeg_hw_cmds) +
 			sizeof(struct msm_jpeg_hw_cmd) * (m - 1);
 	phw_cmds = kmalloc(len, GFP_KERNEL);
